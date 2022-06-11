@@ -6,17 +6,24 @@ async function scrapeIncomeStatement(symbol) {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto(url);
-
   const data = await page.evaluate(() => {
+    const codes = [
+      {'i1':'revenues'},
+      {'i6':'costOfRevenues'},
+      {'i10':'grossProfit'},
+      {'i30':'operatingIncome'},
+      {'i51':'interestExpense'},
+      {'i80':'netIncome'},
+      {'i90':'ebitda'}
+    ]
     let tempArray = [];
     let resultObj = {};
-    let codes = ['i1', 'i6'];
     for (let code of codes){
 
       for (let i=0; i<=5; i++){
-        tempArray.push(document.querySelector(`#data_${code}`).childNodes[i].innerHTML)
+        tempArray.push(document.querySelector(`#data_${Object.keys(code)[0]}`).childNodes[i].innerHTML)
       }
-      resultObj[code] = tempArray;
+      resultObj[Object.values(code)[0]] = tempArray;
       tempArray = [];
     }
     return resultObj
