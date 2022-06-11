@@ -1,18 +1,31 @@
-const puppeteer = require('puppeteer')
+const puppeteer = require("puppeteer");
 
+async function scrapeIncomeStatement(symbol) {
+  let url = `http://financials.morningstar.com/income-statement/is.html?t=${symbol}&region=usa&culture=en-US`;
+  console.log("Getting revenues for", symbol);
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(url);
 
-symbol = 'AAPL';
-let url = `http://financials.morningstar.com/income-statement/is.html?t=${symbol}&region=usa&culture=en-US`;
+  const data = await page.evaluate(() => {
+    let tempArray = [];
+    let resultObj = {};
+    let codes = ['i1', 'i6'];
+    for (let code of codes){
 
+      for (let i=0; i<=5; i++){
+        tempArray.push(document.querySelector(`#data_${code}`).childNodes[i].innerHTML)
+      }
+      resultObj[code] = tempArray;
+      tempArray = [];
+    }
+    return resultObj
+    
+  });
 
-async function scrape(url){
-    console.log(url);
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto(url);
-    const data = await page.evaluate(() => document.querySelector('#data_i1').childNodes[0].innerHTML);
-    await browser.close();
-    console.log(data); 
-  };
+  await browser.close();
+  console.log(data);
+}
 
-scrape(url);
+symbol = "AAPL";
+scrapeIncomeStatement(symbol);
