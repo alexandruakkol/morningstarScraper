@@ -80,15 +80,18 @@ async function scrapeLastestBalanceSheet(symbol) {
     const browser = await puppeteer.launch({headless: true});
     const [page] = await browser.pages();
 
+    page.on('console', message => {return console.log(message)})
+
     await page.goto(url, { waitUntil: 'networkidle0' });
 
     await page.evaluate(() => SRT_stocFund.ChangeFreq(3,'Quarterly'))
-    //await page.waitForFunction("document.getElementById('type').innerText === 'Quarterly'")
-    await page.waitForTimeout(1500); 
+    await page.waitForTimeout(1600); 
     
     const data = await page.evaluate(() => {
-
+      let periods = [];
       
+      for (let i=0; i<document.querySelector('#Year').childNodes.length; i++){
+        periods.push(document.querySelector('#Year').childNodes[i].innerHTML.replace('<br>',''))}
 
       const codes = [
       {'ttgg1':'cash'},
@@ -99,14 +102,13 @@ async function scrapeLastestBalanceSheet(symbol) {
       {'ttgg6':'longtermLiabilities'},
       {'ttg5':'totalLiabilities'},
       {'ttg8':'totalStockEquity'},
-
     ]
     let tempArray = [];
     let resultObj = {};
     for (let code of codes){
 
       for (let i=0; i<document.querySelector(`#data_${Object.keys(code)[0]}`).childNodes.length; i++){
-        tempArray.push(document.querySelector(`#data_${Object.keys(code)[0]}`).childNodes[i].innerHTML)
+        tempArray.push({"period":periods[i], "value":document.querySelector(`#data_${Object.keys(code)[0]}`).childNodes[i].innerHTML })
       }
       resultObj[Object.values(code)[0]] = tempArray;
       tempArray = [];
