@@ -291,4 +291,4 @@ let symbol = "AAPL";
 //scrapeLastestBalanceSheet(symbol);
 //getPrice(symbol)
 //getDividendAndShares(symbol);
-constructLastestData(symbol);
+constructLastestData(symbol); 
