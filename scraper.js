@@ -4,6 +4,7 @@ const getPrice = require("./price");
 const scrapeLastestBalanceSheet = require("./balanceSheet");
 const scrapeIncomeStatement = require("./incomeStatement");
 const computation = require("./computation");
+const writeToDb = require("./dbConnect");
 
 async function constructLastestData(symbol, page) {
   const income = await scrapeIncomeStatement(symbol, page);
@@ -25,24 +26,22 @@ async function constructLastestData(symbol, page) {
   lastResult = { ...lastResult, ...divsShares };
 
   const price = await getPrice(symbol, page);
-  lastResult = { symbol: symbol, ...lastResult, price: price };
+  lastResult = { _id: symbol, ...lastResult, price: price };
 
   //processing data via computation.js
   lastResult = computation(lastResult);
-
-  console.log(lastResult);
+  //console.log(lastResult);
+  return lastResult;
 }
 
-let symbol = "AAPL";
+let symbol = "TSLA";
 
 async function puppetPageInit() {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  return page
-};
+  return page;
+}
 
 (async () => {
-  constructLastestData(symbol, await puppetPageInit())
-})()
-
-
+  writeToDb(await constructLastestData(symbol, await puppetPageInit()));
+})();
