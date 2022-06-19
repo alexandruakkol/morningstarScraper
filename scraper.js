@@ -44,6 +44,7 @@ async function constructLastestData(symbol, page) {
   counter +=1;
   if (counter <5 && !price) {
     price = await getPrice(symbol, page);
+    console.log('price retry', counter);
   }
   lastResult = { _id: symbol, ...lastResult, price: price };
 
