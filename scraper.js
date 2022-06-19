@@ -55,8 +55,8 @@ async function scrapeIncomeStatement(symbol) {
     });
     await browser.close();
     return data;
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(symbol,'incomeStatement',error);
   }
 }
 
@@ -129,8 +129,6 @@ async function scrapeLastestBalanceSheet(symbol) {
     const browser = await puppeteer.launch({ headless: true });
     const [page] = await browser.pages();
 
-    //page.on('console', message => {return console.log(message)})
-
     await page.goto(url, { waitUntil: "networkidle0" });
 
     await page.evaluate(() => SRT_stocFund.ChangeFreq(3, "Quarterly"));
@@ -182,19 +180,18 @@ async function scrapeLastestBalanceSheet(symbol) {
         resultObj[Object.values(code)[0]] = tempArray;
         tempArray = [];
       }
-      console.log("balanceSheet pull successful");
       return resultObj;
     });
     await browser.close();
     return data;
-  } catch (err) {
-    console.error(err);
+  }  catch(error){
+    console.log(symbol,'balanceSheet',error);
   }
 }
 
 async function getPrice(symbol) {
   const url = `http://performance.morningstar.com/stock/performance-return.action?t=${symbol}&region=usa&culture=en-US`;
-  try {
+    try{
     const browser = await puppeteer.launch({ headless: true });
     const [page] = await browser.pages();
 
@@ -205,23 +202,22 @@ async function getPrice(symbol) {
     const data = await page.evaluate(() => {
       return document.getElementById("last-price-value").innerHTML;
     });
-    console.log("price pull successful");
     await browser.close();
-  } catch (err) {
-    console.error(err);
+    return data;
+  } catch(error){
+    console.log(symbol,'price',error);
   }
 }
 
 async function getDividendAndShares(symbol) {
+  try{
   const url = `http://financials.morningstar.com/ratios/r.html?t=${symbol}&region=usa&culture=en-US`;
-  try {
     const browser = await puppeteer.launch({ headless: true });
     const [page] = await browser.pages();
 
     //page.on('console', message => {return console.log(message)})
 
     await page.goto(url, { waitUntil: "networkidle0" });
-
     const data = await page.evaluate(() => {
       resultObj = {};
       if (
@@ -246,29 +242,30 @@ async function getDividendAndShares(symbol) {
           document.querySelector("#i7").children[0].innerHTML.includes("Mil")
         ) {
           resultObj.shares =
-            document.querySelector("#i7").parentNode.childNodes[
+            parseInt((document.querySelector("#i7").parentNode.childNodes[
               document.querySelector("#i7").parentNode.childNodes.length - 1
-            ].innerHTML;
+            ].innerHTML).replace(',',''))*1000000;
         } else {
           return "N/A";
         } //returns n/a if there's no Mil in the span
       } else {
         resultObj.shares = "N/A";
       }
-
+      console.log(resultObj);
       return resultObj;
     });
-
-    console.log("dividend&shares pull successful");
     await browser.close();
-    return data
-  } catch (err) {
-    console.error(err);
+    //console.log(data)
+    return data;
+  } catch(error){
+    console.log(symbol,'divs&shares',error);
   }
 }
 
 async function constructLastestData(symbol) {
+
   const income = await scrapeIncomeStatement(symbol);
+
   let lastResult = {};
   Object.keys(income).forEach((key) => {
     let last = income[key][income[key].length - 1];
@@ -277,18 +274,36 @@ async function constructLastestData(symbol) {
 
   const balance = await scrapeLastestBalanceSheet(symbol);
 
-  console.log(balance);
   Object.keys(balance).forEach((key) => {
     last = balance[key][balance[key].length - 1];
     lastResult[key] = last.value;
   });
 
-  //console.log(lastResult);
+  const divsShares = await getDividendAndShares(symbol);
+  lastResult = {...lastResult, ...divsShares};
+
+  const price = await getPrice(symbol);
+  lastResult = {'symbol':symbol, ...lastResult, 'price':price};
+  
+  //deconstructing
+  const {currentAssets, totalLiabilities, shares} = lastResult;
+
+  //netNet calc
+  let netNet = 'N/A';
+  if(currentAssets && totalLiabilities && shares && price){
+    console.log('df')
+    netNet = price / ((currentAssets - totalLiabilities) / shares);
+  }
+  lastResult = {...lastResult, 'netNet':netNet}
+  
+  
+  console.log(lastResult);
 }
+
 let symbol = "AAPL";
 //scrapeBalanceSheet(symbol);
 //scrapeIncomeStatement(symbol);
 //scrapeLastestBalanceSheet(symbol);
 //getPrice(symbol)
 //getDividendAndShares(symbol);
-constructLastestData(symbol); 
+constructLastestData(symbol);
