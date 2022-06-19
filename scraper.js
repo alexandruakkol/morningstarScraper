@@ -44,9 +44,5 @@ async function puppetPageInit() {
 (async () => {
   constructLastestData(symbol, await puppetPageInit())
 })()
-//scrapeBalanceSheet(symbol);
-//scrapeIncomeStatement(symbol);
-//scrapeLastestBalanceSheet(symbol);
-//getPrice(symbol)
-//getDividendAndShares(symbol);
+
 
