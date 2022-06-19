@@ -16,7 +16,7 @@ function writeToDb(obj) {
       const collection = client.db("findata").collection("last");
       await collection.deleteOne({_id:obj._id});
       const result = await collection.insertOne(obj);
-      console.log(`A document was inserted with the _id: ${result.insertedId}`);
+      console.log(`${obj._id} was inserted into the database.`);
 
       client.close();
     } catch (error) {

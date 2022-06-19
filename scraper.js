@@ -5,6 +5,7 @@ const scrapeLastestBalanceSheet = require("./balanceSheet");
 const scrapeIncomeStatement = require("./incomeStatement");
 const computation = require("./computation");
 const writeToDb = require("./dbConnect");
+const getTickers = require('./getAllUSTickers')
 
 async function constructLastestData(symbol, page) {
   const income = await scrapeIncomeStatement(symbol, page);
@@ -34,14 +35,19 @@ async function constructLastestData(symbol, page) {
   return lastResult;
 }
 
-let symbol = "TSLA";
-
 async function puppetPageInit() {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   return page;
 }
 
-(async () => {
-  writeToDb(await constructLastestData(symbol, await puppetPageInit()));
-})();
+
+async function scrapeSymbols(){
+  symbols = await getTickers();
+  for(symbol of symbols){
+    writeToDb(await constructLastestData(symbol, await puppetPageInit()));
+  }
+};
+
+scrapeSymbols()
+
