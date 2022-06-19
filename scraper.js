@@ -40,7 +40,7 @@ async function constructLastestData(symbol, page) {
   lastResult = { ...lastResult, ...divsShares };
 
   let counter = 0;
-  const price = await getPrice(symbol, page);
+  let price = await getPrice(symbol, page);
   if (counter === 0 && !price) {
     price = await getPrice(symbol, page);
   }
