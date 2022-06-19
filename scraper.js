@@ -4,18 +4,25 @@ const getPrice = require("./price");
 const scrapeLastestBalanceSheet = require("./balanceSheet");
 const scrapeIncomeStatement = require("./incomeStatement");
 const computation = require("./computation");
-const writeToDb = require("./dbConnect");
-const getTickers = require('./getAllUSTickers')
+const { writeToDb, existsInDb } = require("./dbConnect");
+const getTickers = require("./getAllUSTickers");
+
+const overwriteMode = false;
+if (overwriteMode) console.log("Overwrite mode");
+if (!overwriteMode) console.log("Complete mode");
 
 async function constructLastestData(symbol, page) {
   const income = await scrapeIncomeStatement(symbol, page);
 
   let lastResult = {};
+  try{
   Object.keys(income).forEach((key) => {
     let last = income[key][income[key].length - 1];
     lastResult[key] = last.value;
   });
-
+  }catch(error){
+    console.log('data processing error, scraper.js ', error)
+  }
   const balance = await scrapeLastestBalanceSheet(symbol, page);
 
   Object.keys(balance).forEach((key) => {
@@ -29,9 +36,7 @@ async function constructLastestData(symbol, page) {
   const price = await getPrice(symbol, page);
   lastResult = { _id: symbol, ...lastResult, price: price };
 
-  //processing data via computation.js
   lastResult = computation(lastResult);
-  //console.log(lastResult);
   return lastResult;
 }
 
@@ -41,13 +46,22 @@ async function puppetPageInit() {
   return page;
 }
 
-
-async function scrapeSymbols(){
+async function scrapeSymbols() {
   symbols = await getTickers();
-  for(symbol of symbols){
-    writeToDb(await constructLastestData(symbol, await puppetPageInit()));
+
+  for (symbol of symbols) {
+    console.log(symbol)
+    if (!overwriteMode) {
+      if (await existsInDb(symbol)) {
+        console.log('SKIPPED ', symbol )
+        continue;
+      } else {
+        writeToDb(await constructLastestData(symbol, await puppetPageInit()));
+      }
+    } else {
+      writeToDb(await constructLastestData(symbol, await puppetPageInit()));
+    }
   }
-};
+}
 
-scrapeSymbols()
-
+scrapeSymbols();
