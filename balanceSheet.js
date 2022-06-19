@@ -6,7 +6,7 @@ async function scrapeLastestBalanceSheet(symbol, page) {
   
       await page.evaluate(() => SRT_stocFund.ChangeFreq(3, "Quarterly"));
       //TODO variable timeout
-      await page.waitForTimeout(1600);
+      await page.waitForTimeout(1800);
   
       const data = await page.evaluate(() => {
         let periods = [];
