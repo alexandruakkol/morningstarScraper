@@ -51,7 +51,7 @@ async function puppetPageInit() {
 
 async function scrapeSymbols() {
   symbols = await getTickers();
-
+  const page = await puppetPageInit();
   for (symbol of symbols) {
     console.log(symbol)
     if (!overwriteMode) {
@@ -59,10 +59,10 @@ async function scrapeSymbols() {
         console.log('SKIPPED ', symbol )
         continue;
       } else {
-        writeToDb(await constructLastestData(symbol, await puppetPageInit()));
+        writeToDb(await constructLastestData(symbol, page));
       }
     } else {
-      writeToDb(await constructLastestData(symbol, await puppetPageInit()));
+      writeToDb(await constructLastestData(symbol, page));
     }
   }
 }
