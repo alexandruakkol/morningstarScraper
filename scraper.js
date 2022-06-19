@@ -1,270 +1,12 @@
 const puppeteer = require("puppeteer");
+const getDividendAndShares = require("./divsShares");
+const getPrice = require("./price");
+const scrapeLastestBalanceSheet = require("./balanceSheet");
+const scrapeIncomeStatement = require("./incomeStatement");
+const computation = require("./computation");
 
-async function scrapeIncomeStatement(symbol) {
-  let url = `http://financials.morningstar.com/income-statement/is.html?t=${symbol}&region=usa&culture=en-US`;
-  try {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0" });
-    const data = await page.evaluate(() => {
-      let periods = [];
-      for (
-        let i = 0;
-        i < document.querySelector("#Year").childNodes.length;
-        i++
-      ) {
-        periods.push(
-          document
-            .querySelector("#Year")
-            .childNodes[i].innerHTML.replace("<br>", "")
-        );
-      }
-
-      const codes = [
-        { i1: "revenues" },
-        { i6: "costOfRevenues" },
-        { i10: "grossProfit" },
-        { i30: "operatingIncome" },
-        { i51: "interestExpense" },
-        { i80: "netIncome" },
-        { i90: "ebitda" },
-      ];
-      let tempArray = [];
-      let resultObj = {};
-      for (let code of codes) {
-        for (
-          let i = 0;
-          i <
-          document.querySelector(`#data_${Object.keys(code)[0]}`).childNodes
-            .length;
-          i++
-        ) {
-          tempArray.push({
-            period: periods[i],
-            value: document
-              .querySelector(`#data_${Object.keys(code)[0]}`)
-              .childNodes[i].getAttribute("rawvalue"),
-          });
-        }
-        resultObj[Object.values(code)[0]] = tempArray;
-        tempArray = [];
-      }
-      console.log("incomeStatement pull successful");
-
-      return resultObj;
-    });
-    await browser.close();
-    return data;
-  } catch (error) {
-    console.error(symbol,'incomeStatement',error);
-  }
-}
-
-//this scrapes the 'annual' tab for the historical data
-async function scrapeBalanceSheet(symbol) {
-  const url = `http://financials.morningstar.com/balance-sheet/bs.html?t=${symbol}&region=usa&culture=en-US`;
-  try {
-    const browser = await puppeteer.launch();
-    const [page] = await browser.pages();
-
-    await page.goto(url, { waitUntil: "networkidle0" });
-    const data = await page.evaluate(() => {
-      let periods = [];
-
-      for (
-        let i = 0;
-        i < document.querySelector("#Year").childNodes.length;
-        i++
-      ) {
-        periods.push(
-          document
-            .querySelector("#Year")
-            .childNodes[i].innerHTML.replace("<br>", "")
-        );
-      }
-
-      const codes = [
-        { ttgg1: "cash" },
-        { ttg1: "currentAssets" },
-        { ttg2: "longtermAssets" },
-        { tts1: "totalAssets" },
-        { ttgg5: "currentLiabilities" },
-        { ttgg6: "longtermLiabilities" },
-        { ttg5: "totalLiabilities" },
-        { ttg8: "totalStockEquity" },
-      ];
-      let tempArray = [];
-      let resultObj = {};
-      for (let code of codes) {
-        for (
-          let i = 0;
-          i <
-          document.querySelector(`#data_${Object.keys(code)[0]}`).childNodes
-            .length;
-          i++
-        ) {
-          tempArray.push({
-            period: periods[i],
-            value: document
-              .querySelector(`#data_${Object.keys(code)[0]}`)
-              .childNodes[i].getAttribute("rawvalue"),
-          });
-        }
-        resultObj[Object.values(code)[0]] = tempArray;
-        tempArray = [];
-      }
-      return resultObj;
-    });
-    await browser.close();
-    return data;
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-//this scrapes the 'quarterly' tab for the lastest data
-async function scrapeLastestBalanceSheet(symbol) {
-  const url = `https://financials.morningstar.com/balance-sheet/bs.html?t=${symbol}&region=usa&culture=en-US`;
-  try {
-    const browser = await puppeteer.launch({ headless: true });
-    const [page] = await browser.pages();
-
-    await page.goto(url, { waitUntil: "networkidle0" });
-
-    await page.evaluate(() => SRT_stocFund.ChangeFreq(3, "Quarterly"));
-    //TODO variable timeout
-    await page.waitForTimeout(1600);
-
-    const data = await page.evaluate(() => {
-      let periods = [];
-
-      for (
-        let i = 0;
-        i < document.querySelector("#Year").childNodes.length;
-        i++
-      ) {
-        periods.push(
-          document
-            .querySelector("#Year")
-            .childNodes[i].innerHTML.replace("<br>", "")
-        );
-      }
-
-      const codes = [
-        { ttgg1: "cash" },
-        { ttg1: "currentAssets" },
-        { ttg2: "longtermAssets" },
-        { tts1: "totalAssets" },
-        { ttgg5: "currentLiabilities" },
-        { ttgg6: "longtermLiabilities" },
-        { ttg5: "totalLiabilities" },
-        { ttg8: "totalStockEquity" },
-      ];
-      let tempArray = [];
-      let resultObj = {};
-      for (let code of codes) {
-        for (
-          let i = 0;
-          i <
-          document.querySelector(`#data_${Object.keys(code)[0]}`).childNodes
-            .length;
-          i++
-        ) {
-          tempArray.push({
-            period: periods[i],
-            value: document
-              .querySelector(`#data_${Object.keys(code)[0]}`)
-              .childNodes[i].getAttribute("rawvalue"),
-          });
-        }
-        resultObj[Object.values(code)[0]] = tempArray;
-        tempArray = [];
-      }
-      return resultObj;
-    });
-    await browser.close();
-    return data;
-  }  catch(error){
-    console.log(symbol,'balanceSheet',error);
-  }
-}
-
-async function getPrice(symbol) {
-  const url = `http://performance.morningstar.com/stock/performance-return.action?t=${symbol}&region=usa&culture=en-US`;
-    try{
-    const browser = await puppeteer.launch({ headless: true });
-    const [page] = await browser.pages();
-
-    //page.on('console', message => {return console.log(message)})
-
-    await page.goto(url, { waitUntil: "networkidle0" });
-
-    const data = await page.evaluate(() => {
-      return document.getElementById("last-price-value").innerHTML;
-    });
-    await browser.close();
-    return data;
-  } catch(error){
-    console.log(symbol,'price',error);
-  }
-}
-
-async function getDividendAndShares(symbol) {
-  try{
-  const url = `http://financials.morningstar.com/ratios/r.html?t=${symbol}&region=usa&culture=en-US`;
-    const browser = await puppeteer.launch({ headless: true });
-    const [page] = await browser.pages();
-
-    //page.on('console', message => {return console.log(message)})
-
-    await page.goto(url, { waitUntil: "networkidle0" });
-    const data = await page.evaluate(() => {
-      resultObj = {};
-      if (
-        document
-          .querySelector("#i6")
-          .parentNode.childNodes[0].innerHTML.includes("Dividends")
-      ) {
-        resultObj.dividend =
-          document.querySelector("#i6").parentNode.childNodes[
-            document.querySelector("#i6").parentNode.childNodes.length - 1
-          ].innerHTML;
-      } else {
-        resultObj.dividend = "N/A";
-      }
-
-      if (
-        document
-          .querySelector("#i7")
-          .parentNode.childNodes[0].innerHTML.includes("Shares")
-      ) {
-        if (
-          document.querySelector("#i7").children[0].innerHTML.includes("Mil")
-        ) {
-          resultObj.shares =
-            parseInt((document.querySelector("#i7").parentNode.childNodes[
-              document.querySelector("#i7").parentNode.childNodes.length - 1
-            ].innerHTML).replace(',',''))*1000000;
-        } else {
-          return "N/A";
-        } //returns n/a if there's no Mil in the span
-      } else {
-        resultObj.shares = "N/A";
-      }
-      console.log(resultObj);
-      return resultObj;
-    });
-    await browser.close();
-    //console.log(data)
-    return data;
-  } catch(error){
-    console.log(symbol,'divs&shares',error);
-  }
-}
-
-async function constructLastestData(symbol) {
-
-  const income = await scrapeIncomeStatement(symbol);
+async function constructLastestData(symbol, page) {
+  const income = await scrapeIncomeStatement(symbol, puppeteer, page);
 
   let lastResult = {};
   Object.keys(income).forEach((key) => {
@@ -272,38 +14,47 @@ async function constructLastestData(symbol) {
     lastResult[key] = last.value;
   });
 
-  const balance = await scrapeLastestBalanceSheet(symbol);
+  const balance = await scrapeLastestBalanceSheet(symbol, puppeteer, page);
 
   Object.keys(balance).forEach((key) => {
     last = balance[key][balance[key].length - 1];
     lastResult[key] = last.value;
   });
 
-  const divsShares = await getDividendAndShares(symbol);
-  lastResult = {...lastResult, ...divsShares};
+  const divsShares = await getDividendAndShares(symbol, puppeteer, page);
+  lastResult = { ...lastResult, ...divsShares };
 
-  const price = await getPrice(symbol);
-  lastResult = {'symbol':symbol, ...lastResult, 'price':price};
-  
+  const price = await getPrice(symbol, puppeteer, page);
+  lastResult = { symbol: symbol, ...lastResult, price: price };
+
   //deconstructing
-  const {currentAssets, totalLiabilities, shares} = lastResult;
+  const { currentAssets, totalLiabilities, shares } = lastResult;
 
   //netNet calc
-  let netNet = 'N/A';
-  if(currentAssets && totalLiabilities && shares && price){
-    console.log('df')
+  let netNet = "N/A";
+  if (currentAssets && totalLiabilities && shares && price) {
+    console.log("df");
     netNet = price / ((currentAssets - totalLiabilities) / shares);
   }
-  lastResult = {...lastResult, 'netNet':netNet}
-  
-  
+  lastResult = { ...lastResult, netNet: netNet };
+
   console.log(lastResult);
 }
 
 let symbol = "AAPL";
+
+async function puppetPageInit() {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  return page
+};
+
+(async () => {
+  constructLastestData(symbol, await puppetPageInit())
+})()
 //scrapeBalanceSheet(symbol);
 //scrapeIncomeStatement(symbol);
 //scrapeLastestBalanceSheet(symbol);
 //getPrice(symbol)
 //getDividendAndShares(symbol);
-constructLastestData(symbol);
+
