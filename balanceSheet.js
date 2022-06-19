@@ -1,4 +1,4 @@
-async function scrapeLastestBalanceSheet(symbol, puppeteer, page) {
+async function scrapeLastestBalanceSheet(symbol, page) {
     const url = `https://financials.morningstar.com/balance-sheet/bs.html?t=${symbol}&region=usa&culture=en-US`;
     try {
   

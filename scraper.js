@@ -6,7 +6,7 @@ const scrapeIncomeStatement = require("./incomeStatement");
 const computation = require("./computation");
 
 async function constructLastestData(symbol, page) {
-  const income = await scrapeIncomeStatement(symbol, puppeteer, page);
+  const income = await scrapeIncomeStatement(symbol, page);
 
   let lastResult = {};
   Object.keys(income).forEach((key) => {
@@ -14,29 +14,21 @@ async function constructLastestData(symbol, page) {
     lastResult[key] = last.value;
   });
 
-  const balance = await scrapeLastestBalanceSheet(symbol, puppeteer, page);
+  const balance = await scrapeLastestBalanceSheet(symbol, page);
 
   Object.keys(balance).forEach((key) => {
     last = balance[key][balance[key].length - 1];
     lastResult[key] = last.value;
   });
 
-  const divsShares = await getDividendAndShares(symbol, puppeteer, page);
+  const divsShares = await getDividendAndShares(symbol, page);
   lastResult = { ...lastResult, ...divsShares };
 
-  const price = await getPrice(symbol, puppeteer, page);
+  const price = await getPrice(symbol, page);
   lastResult = { symbol: symbol, ...lastResult, price: price };
 
-  //deconstructing
-  const { currentAssets, totalLiabilities, shares } = lastResult;
-
-  //netNet calc
-  let netNet = "N/A";
-  if (currentAssets && totalLiabilities && shares && price) {
-    console.log("df");
-    netNet = price / ((currentAssets - totalLiabilities) / shares);
-  }
-  lastResult = { ...lastResult, netNet: netNet };
+  //processing data via computation.js
+  lastResult = computation(lastResult);
 
   console.log(lastResult);
 }

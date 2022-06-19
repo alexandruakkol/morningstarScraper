@@ -1,4 +1,4 @@
-async function getDividendAndShares(symbol, puppeteer, page) {
+async function getDividendAndShares(symbol, page) {
   try{
   const url = `http://financials.morningstar.com/ratios/r.html?t=${symbol}&region=usa&culture=en-US`;
     //page.on('console', message => {return console.log(message)})

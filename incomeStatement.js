@@ -1,5 +1,5 @@
 
-async function scrapeIncomeStatement(symbol, puppeteer, page) {
+async function scrapeIncomeStatement(symbol, page) {
     let url = `http://financials.morningstar.com/income-statement/is.html?t=${symbol}&region=usa&culture=en-US`;
     try {
      

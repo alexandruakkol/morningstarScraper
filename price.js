@@ -1,8 +1,6 @@
-async function getPrice(symbol, puppeteer, page) {
+async function getPrice(symbol, page) {
     const url = `http://performance.morningstar.com/stock/performance-return.action?t=${symbol}&region=usa&culture=en-US`;
       try{
-      //page.on('console', message => {return console.log(message)})
-  
       await page.goto(url, { waitUntil: "networkidle0" });
   
       const data = await page.evaluate(() => {
