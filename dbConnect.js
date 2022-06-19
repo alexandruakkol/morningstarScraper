@@ -27,7 +27,7 @@ function writeToDb(obj) {
 }
 
 async function existsInDb(symbol) {
-
+client.connect()
     const collection = client.db("findata").collection("last");
     try {
         out = await collection.findOne({ _id: symbol })
@@ -36,6 +36,7 @@ async function existsInDb(symbol) {
       console.log("existsInDb error", error);
     }
     return out;
+
   }
 
 module.exports = { writeToDb, existsInDb };

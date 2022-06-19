@@ -21,15 +21,18 @@ async function constructLastestData(symbol, page) {
     lastResult[key] = last.value;
   });
   }catch(error){
-    console.log('data processing error, scraper.js ', error)
+    console.log('data processing #1 error, scraper.js ', error)
   }
   const balance = await scrapeLastestBalanceSheet(symbol, page);
 
+  try{
   Object.keys(balance).forEach((key) => {
     last = balance[key][balance[key].length - 1];
     lastResult[key] = last.value;
   });
-
+  }catch(error){
+    console.log('data processing #2 error, scraper.js ', error)
+  }
   const divsShares = await getDividendAndShares(symbol, page);
   lastResult = { ...lastResult, ...divsShares };
 
