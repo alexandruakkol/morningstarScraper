@@ -7,7 +7,7 @@ const computation = require("./computation");
 const { writeToDb, existsInDb } = require("./dbConnect");
 const getTickers = require("./getAllUSTickers");
 
-const overwriteMode = true;
+const overwriteMode = false;
 if (overwriteMode) {
   console.log("Overwrite mode ON");
 } else {
